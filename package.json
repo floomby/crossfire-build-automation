@@ -1,0 +1,19 @@
+{
+  "name": "crossfire-ci",
+  "version": "1.0.0",
+  "description": "Crossfire build automation",
+  "main": "app.js",
+  "dependencies": {
+    "archiver": "^5.0.0",
+    "async": "^3.2.0",
+    "express": "^4.17.1",
+    "morgan": "^1.10.0",
+    "ncp": "^2.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Josh Hoover",
+  "license": "ISC"
+}
