@@ -8,6 +8,9 @@ const config = require('./config');
 const repo = require('./repo');
 
 exports.build_log = '';
+exports.release_dir = '';
+// TODO I need to write the build log
+exports.log_dir = '';
 
 const release_files = [
     ['bin/crossfire-client-gtk2.exe', 'release/crossfire-client-gtk2.exe'],
@@ -72,7 +75,7 @@ let async_cp = (dir, done) => {
             if (!fs.existsSync(a.slice(0, i + 1).join('/'))) fs.mkdirSync(a.slice(0, i + 1).join('/'));
         } catch {}
     }
-    ncp(dir[0], dir[1], function (err) {
+    ncp(dir[0], dir[1], err => {
         if (err) {
             exports.build_log += `There was an error copying files (${err})\n`;
             // return done(err);
@@ -88,6 +91,10 @@ archive.on('error', err => {
     throw err;
 });
 
+exports.building = false;
+exports.need_build = false;
+let building_rev;
+
 exports.make_release = () => {
     // TODO write something in the log that indicates we are making an archive
     fs.mkdirSync('release');
@@ -97,19 +104,21 @@ exports.make_release = () => {
             this.building = false;
             return;
         }
-        const ostream = fs.createWriteStream(config.archive_name);
+        const ostream = fs.createWriteStream('');
         archive.pipe(ostream);
         archive.directory(config.source_dir + '/build/release', false);
         archive.finalize();
+        // TODO Copy the release and the log to somewhere so we can see/download all the past releases
         console.log('build completed');
-        this.building = false;
+        ncp(`client-${building_rev}.zip`, this.release_dir, err => {
+            if (err) console.log('there was an error copying to the release dir');
+            this.building = false;
+        });
     });
 };
 
-exports.building = false;
-exports.need_build = false;
-
-exports.do_build = update => {
+exports.do_build = async update => {
+    let release_name = await `client-${repo.revision()}.zip`;
     exports.build_log = '';
     this.building = true;
     this.need_build = false;

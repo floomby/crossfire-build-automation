@@ -4,35 +4,39 @@ const express = require('express');
 const app = express();
 
 const config = require('./config');
+const build = require('./build');
 const app_dir = process.cwd();
+if (!fs.existsSync('releases')) fs.mkdirSync('releases');
+if (!fs.existsSync('logs')) fs.mkdirSync('logs');
+build.release_dir = app_dir + '/releases';
+build.release_dir = app_dir + '/logs';
 process.chdir(config.source_dir);
 
-const build = require('./build');
-build.do_build();
-console.log(build.build_log);
-// process.exit();
+
+let revisions = ['r<something>', 'something else']; // TODO Populate this with the past builds that we have done 
 
 app.use(require('morgan')('dev'));
 
 app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
-    res.send(build.build_log.replace(/\n/g, '<br>'));
+    res.render('home.ejs', { revisions, test: 'This is a test' });
 });
 
-app.get('/download', (req, res) => {
+// app.get('/latest', (req, res) => {
+//     if (fs.existsSync(config.source_dir + `/build/${config.archive_name}`)) res.download(config.source_dir + `/build/${config.archive_name}`);
+//     else res.send('The download is not availible');
+// });
+
+// The latest build that built sucessfully
+app.get('/release', (req, res) => {
     if (fs.existsSync(config.source_dir + `/build/${config.archive_name}`)) res.download(config.source_dir + `/build/${config.archive_name}`);
     else res.send('The download is not availible');
 });
 
-// The latest build that built sucessfully
-app.get('/latest_release', (req, res) => {
-    
-});
-
-// The latest build, regardless of wheather 
-app.get('/latest', (req, res) => {
-
+// The latest build, regardless of wheather
+app.get('/log', (req, res) => {
+    // req.rev
 });
 
 setInterval(() => { 
