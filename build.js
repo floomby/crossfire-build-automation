@@ -9,7 +9,6 @@ const repo = require('./repo');
 
 exports.build_log = '';
 exports.release_dir = '';
-// TODO I need to write the build log
 exports.log_dir = '';
 
 const release_files = [
@@ -66,20 +65,22 @@ const release_files = [
         'release/lib/gtk-2.0'],
 ];
 
+let abort_build = err => {
+    exports.build_log += `There was an error with the build (${err})\n`;
+    this.building = false;
+};
+
 let async_cp = (dir, done) => {
     let a = dir[1].split('/');
     for(let i = 0; i < a.length - 1; i++) {
         try {
             // sorry for the random syncronous code here
-            console.log('making dir:', a.slice(0, i + 1).join('/'));
+            // console.log('making dir:', a.slice(0, i + 1).join('/'));
             if (!fs.existsSync(a.slice(0, i + 1).join('/'))) fs.mkdirSync(a.slice(0, i + 1).join('/'));
         } catch {}
     }
     ncp(dir[0], dir[1], err => {
-        if (err) {
-            exports.build_log += `There was an error copying files (${err})\n`;
-            // return done(err);
-        } 
+        if (err) return abort_build(err);
         done();
     });
 }
@@ -99,50 +100,40 @@ exports.make_release = () => {
     // TODO write something in the log that indicates we are making an archive
     fs.mkdirSync('release');
     async.each(release_files, async_cp, err => {
-        if (err) {
-            console.log('there was an error copying files', err);
-            this.building = false;
-            return;
-        }
+        if (err) return abort_build(err);
         const ostream = fs.createWriteStream('');
         archive.pipe(ostream);
         archive.directory(config.source_dir + '/build/release', false);
         archive.finalize();
-        // TODO Copy the release and the log to somewhere so we can see/download all the past releases
         console.log('build completed');
         ncp(`client-${building_rev}.zip`, this.release_dir, err => {
-            if (err) console.log('there was an error copying to the release dir');
-            this.building = false;
+            if (err) return abort_build(err);
+            fs.writeFile(this.log_dir + '/log-' + building_rev, this.build_log, err => {
+                if (err) return console.log('unable to write log');
+            });
         });
     });
 };
 
 exports.do_build = async update => {
-    let release_name = await `client-${repo.revision()}.zip`;
-    exports.build_log = '';
+    await repo.update();
+    building_rev = await repo.revision();
+    this.build_log = '';
     this.building = true;
     this.need_build = false;
-    if (update) {
-        await repo.update();
-        return;
-    }
     if (fs.existsSync('build')) fs.rmdirSync('build', { recursive: true });
     fs.mkdirSync('build');
     process.chdir('build');
     // exports.build_log += `>>>>> cd ${config.source_dir}build\n`;
     const child = child_process.exec('cmake -G "MinGW Makefiles" ..');
     child.stdout.on('data', data => {
-        exports.build_log += data;
+        this.build_log += data;
     });
     child.stderr.on('data', data => {
-        exports.build_log += data;
+        this.build_log += data;
     });
     child.on('exit', code => {
-        if (code) {
-            exports.build_log += 'There was an error with the build\n';
-            this.building = false;
-            return;
-        }
+        if (code) return abort_build('There was an error with the build\n');
         const child = child_process.exec('mingw32-make');
         child.stdout.on('data', data => {
             exports.build_log += data;
@@ -151,11 +142,7 @@ exports.do_build = async update => {
             exports.build_log += data;
         });
         child.on('exit', code => {
-            if (code) {
-                exports.build_log += 'There was an error with the build\n';
-                this.building = false;
-                return;
-            }
+            if (code) return abort_build('There was an error with the build\n');
             const child = child_process.exec('mingw32-make install');
             child.stdout.on('data', data => {
                 exports.build_log += data;
@@ -164,11 +151,7 @@ exports.do_build = async update => {
                 exports.build_log += data;
             });
             child.on('exit', code => {
-                if (code) {
-                    exports.build_log += 'There was an error with the build\n';
-                    this.building = false;
-                    return;
-                }
+                if (code) abort_build('There was an error with the build\n');
                 this.make_release();
             });
         });

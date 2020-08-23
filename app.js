@@ -9,11 +9,16 @@ const app_dir = process.cwd();
 if (!fs.existsSync('releases')) fs.mkdirSync('releases');
 if (!fs.existsSync('logs')) fs.mkdirSync('logs');
 build.release_dir = app_dir + '/releases';
-build.release_dir = app_dir + '/logs';
+build.log_dir = app_dir + '/logs';
 process.chdir(config.source_dir);
 
 
-let revisions = ['r<something>', 'something else']; // TODO Populate this with the past builds that we have done 
+let revisions = [];
+
+fs.readdir(build.log_dir, (err, files) => {
+    if (err) return console.log('error reading log file names');
+    revisions = files.map(x => x.split('-')[1]);
+});
 
 app.use(require('morgan')('dev'));
 
@@ -23,20 +28,18 @@ app.get('/', (req, res) => {
     res.render('home.ejs', { revisions, test: 'This is a test' });
 });
 
-// app.get('/latest', (req, res) => {
-//     if (fs.existsSync(config.source_dir + `/build/${config.archive_name}`)) res.download(config.source_dir + `/build/${config.archive_name}`);
-//     else res.send('The download is not availible');
-// });
-
-// The latest build that built sucessfully
 app.get('/release', (req, res) => {
-    if (fs.existsSync(config.source_dir + `/build/${config.archive_name}`)) res.download(config.source_dir + `/build/${config.archive_name}`);
-    else res.send('The download is not availible');
+    if (fs.existsSync(build.release_dir + `/client-${req.rev}.zip`)) res.download(build.release_dir + `/client-${req.rev}.zip`);
+    else res.send('This release is not availible');
 });
 
-// The latest build, regardless of wheather
 app.get('/log', (req, res) => {
-    // req.rev
+    if (fs.existsSync(build.log_dir + `/log-${req.rev}`)) res.download(build.log_dir + `/log-${req.rev}`);
+    else res.send('This log is not availible');
+});
+
+app.post('/somehook', (req, res) => {
+    build.need_build = true;
 });
 
 setInterval(() => { 
