@@ -11,6 +11,8 @@ exports.build_log = '';
 exports.release_dir = '';
 exports.log_dir = '';
 
+const verbose = true;
+
 const release_files = [
     ['bin/crossfire-client-gtk2.exe', 'release/crossfire-client-gtk2.exe'],
     ['bin/cfsndserv.exe', 'release/cfsndserv.exe'],
@@ -59,14 +61,15 @@ const release_files = [
     ['C:\\msys32\\mingw32\\bin\\libwinpthread-1.dll', 'release/libwinpthread-1.dll'],
     ['C:\\msys32\\mingw32\\bin\\SDL.dll', 'release/SDL.dll'],
     ['C:\\msys32\\mingw32\\bin\\zlib1.dll', 'release/zlib1.dll'],
-    ['C:\\msys32\\mingw32\\lib\\gdk-pixbuf-2.0',
-        'release/lib/gdk-pixbuf-2.0'],
-    ['C:\\msys32\\mingw32\\lib\\gtk-2.0',
-        'release/lib/gtk-2.0'],
+    ['C:\\msys32\\mingw32\\lib\\gdk-pixbuf-2.0', 'release/lib/gdk-pixbuf-2.0'],
+    ['C:\\msys32\\mingw32\\lib\\gtk-2.0', 'release/lib/gtk-2.0'],
 ];
 
 let abort_build = err => {
-    exports.build_log += `There was an error with the build (${err})\n`;
+    this.build_log += `There was an error with the build (${err})\n`;
+    fs.writeFile(this.log_dir + '/log-' + building_rev, this.build_log, err => {
+        if (err) return console.log('unable to write log');
+    });
     this.building = false;
 };
 
@@ -88,7 +91,7 @@ let async_cp = (dir, done) => {
 archive = archiver('zip');
 
 archive.on('error', err => {
-    console.log('unable to zip file');
+    this.build_log += `Unable to create archive (${err})\n`;
     throw err;
 });
 
@@ -101,7 +104,7 @@ exports.make_release = () => {
     fs.mkdirSync('release');
     async.each(release_files, async_cp, err => {
         if (err) return abort_build(err);
-        const ostream = fs.createWriteStream('');
+        const ostream = fs.createWriteStream(`${config.source_dir}/build/release/client-${building_rev}.zip`);
         archive.pipe(ostream);
         archive.directory(config.source_dir + '/build/release', false);
         archive.finalize();
@@ -115,45 +118,70 @@ exports.make_release = () => {
     });
 };
 
-exports.do_build = async update => {
-    await repo.update();
-    building_rev = await repo.revision();
-    this.build_log = '';
-    this.building = true;
-    this.need_build = false;
+
+exports.compile_and_make = async () => {
+    // await repo.update();
     if (fs.existsSync('build')) fs.rmdirSync('build', { recursive: true });
     fs.mkdirSync('build');
     process.chdir('build');
     // exports.build_log += `>>>>> cd ${config.source_dir}build\n`;
     const child = child_process.exec('cmake -G "MinGW Makefiles" ..');
     child.stdout.on('data', data => {
+        if (verbose) process.stdout.write(data);
         this.build_log += data;
     });
     child.stderr.on('data', data => {
+        if (verbose) process.stdout.write(data);
         this.build_log += data;
     });
     child.on('exit', code => {
         if (code) return abort_build('There was an error with the build\n');
         const child = child_process.exec('mingw32-make');
         child.stdout.on('data', data => {
-            exports.build_log += data;
+            if (verbose) process.stdout.write(data);
+            this.build_log += data;
         });
         child.stderr.on('data', data => {
-            exports.build_log += data;
+            if (verbose) process.stdout.write(data);
+            this.build_log += data;
         });
         child.on('exit', code => {
             if (code) return abort_build('There was an error with the build\n');
             const child = child_process.exec('mingw32-make install');
             child.stdout.on('data', data => {
-                exports.build_log += data;
+                if (verbose) process.stdout.write(data);
+                this.build_log += data;
             });
             child.stderr.on('data', data => {
-                exports.build_log += data;
+                if (verbose) process.stdout.write(data);
+                this.build_log += data;
             });
             child.on('exit', code => {
                 if (code) abort_build('There was an error with the build\n');
                 this.make_release();
             });
         });
+    });
+};
+
+exports.do_build = async () => {
+    this.building = true;
+    this.need_build = false;
+    this.build_log = '';
+    console.log('doing build');
+    let svn_output = '';
+    const child = child_process.exec('svn up ..');
+    child.stdout.on('data', data => {
+        if (verbose) process.stdout.write(data);
+        svn_output += data;
+    });
+    child.stderr.on('data', data => {
+        if (verbose) process.stdout.write(data);
+        svn_output += data;
+    });
+    child.on('exit', code => {
+        if (code) abort_build('There was an svn error\n');
+        building_rev = svn_output.split('\n')[svn_output.split('\n').length - 2].split(' ')[2].split('.')[0];
+        this.compile_and_make();
     });
 };

@@ -3,6 +3,7 @@ const exec = require('await-exec');
 const config = require('./config');
 
 exports.update = async () => {
+    // TODO I probably need to update the sounds as well
     return exec('svn up ..');
 };
 

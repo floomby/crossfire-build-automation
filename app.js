@@ -38,8 +38,9 @@ app.get('/log', (req, res) => {
     else res.send('This log is not availible');
 });
 
-app.post('/somehook', (req, res) => {
+app.get('/somehook', (req, res) => {
     build.need_build = true;
+    res.send('will do a build');
 });
 
 setInterval(() => { 
