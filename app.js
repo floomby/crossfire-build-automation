@@ -13,11 +13,11 @@ build.log_dir = app_dir + '/logs';
 process.chdir(config.source_dir);
 
 
-let revisions = [];
+build.revisions = [];
 
 fs.readdir(build.log_dir, (err, files) => {
     if (err) return console.log('error reading log file names');
-    revisions = files.map(x => x.split('-')[1]);
+    build.revisions = files.map(x => x.split('-')[1]);
 });
 
 app.use(require('morgan')('dev'));
@@ -25,16 +25,16 @@ app.use(require('morgan')('dev'));
 app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
-    res.render('home.ejs', { revisions, test: 'This is a test' });
+    res.render('home.ejs', { revisions: build.revisions });
 });
 
 app.get('/release', (req, res) => {
-    if (fs.existsSync(build.release_dir + `/client-${req.rev}.zip`)) res.download(build.release_dir + `/client-${req.rev}.zip`);
+    if (fs.existsSync(build.release_dir + `/client-${req.query.rev}.zip`)) res.download(build.release_dir + `/client-${req.query.rev}.zip`);
     else res.send('This release is not availible');
 });
 
 app.get('/log', (req, res) => {
-    if (fs.existsSync(build.log_dir + `/log-${req.rev}`)) res.download(build.log_dir + `/log-${req.rev}`);
+    if (fs.existsSync(build.log_dir + `/log-${req.query.rev}`)) res.download(build.log_dir + `/log-${req.query.rev}`);
     else res.send('This log is not availible');
 });
 

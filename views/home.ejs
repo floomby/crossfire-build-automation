@@ -3,14 +3,14 @@
   <head>
     <title>Crossfire windows builds</title>
     <style>
-      body { padding-top:80px; }
+      body { padding-top:20px; }
     </style>
   </head>
   <body>
     <% for (let i = 0; i < revisions.length; i++) { %>
       <a href="/release?rev=<%-revisions[i]%>"><%-revisions[i]%> release</a>
       <a href="/log?rev=<%-revisions[i]%>"><%-revisions[i]%> build log</a>
-      <br>
+      <br/>
     <% } %>
   </body>
 </html>

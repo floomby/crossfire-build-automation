@@ -5,11 +5,11 @@ const child_process = require('child_process');
 var archiver = require('archiver');
 
 const config = require('./config');
-const repo = require('./repo');
 
 exports.build_log = '';
 exports.release_dir = '';
 exports.log_dir = '';
+exports.revisions = [];
 
 const verbose = true;
 
@@ -66,6 +66,7 @@ const release_files = [
 ];
 
 let abort_build = err => {
+    if (verbose) console.log('Build aborting', err);
     this.build_log += `There was an error with the build (${err})\n`;
     fs.writeFile(this.log_dir + '/log-' + building_rev, this.build_log, err => {
         if (err) return console.log('unable to write log');
@@ -78,11 +79,16 @@ let async_cp = (dir, done) => {
     for(let i = 0; i < a.length - 1; i++) {
         try {
             // sorry for the random syncronous code here
-            // console.log('making dir:', a.slice(0, i + 1).join('/'));
-            if (!fs.existsSync(a.slice(0, i + 1).join('/'))) fs.mkdirSync(a.slice(0, i + 1).join('/'));
+            if (!fs.existsSync(a.slice(0, i + 1).join('/'))) {
+                this.build_log += `creating directory ${a.slice(0, i + 1).join('/')}`;
+                if (verbose) console.log(`creating directory ${a.slice(0, i + 1).join('/')}`);
+                fs.mkdirSync(a.slice(0, i + 1).join('/'));
+            }
         } catch {}
     }
     ncp(dir[0], dir[1], err => {
+        this.build_log += `copying from ${dir[0]} to ${dir[1]}\n`;
+        if (verbose) console.log(`copying from ${dir[0]} to ${dir[1]}`);
         if (err) return abort_build(err);
         done();
     });
@@ -104,27 +110,25 @@ exports.make_release = () => {
     fs.mkdirSync('release');
     async.each(release_files, async_cp, err => {
         if (err) return abort_build(err);
-        const ostream = fs.createWriteStream(`${config.source_dir}/build/release/client-${building_rev}.zip`);
+        const ostream = fs.createWriteStream(`${this.release_dir}\\client-${building_rev}.zip`);
         archive.pipe(ostream);
         archive.directory(config.source_dir + '/build/release', false);
         archive.finalize();
-        console.log('build completed');
-        ncp(`client-${building_rev}.zip`, this.release_dir, err => {
-            if (err) return abort_build(err);
-            fs.writeFile(this.log_dir + '/log-' + building_rev, this.build_log, err => {
-                if (err) return console.log('unable to write log');
-            });
+        console.log(this.release_dir);
+        fs.writeFile(this.log_dir + '/log-' + building_rev, this.build_log, err => {
+            if (err) return console.log('unable to write log');
         });
+        this.revisions.push(building_rev);
+        this.building = false;
+        console.log('build completed');
     });
 };
 
-
-exports.compile_and_make = async () => {
+exports.do_cmake = async () => {
     // await repo.update();
     if (fs.existsSync('build')) fs.rmdirSync('build', { recursive: true });
     fs.mkdirSync('build');
     process.chdir('build');
-    // exports.build_log += `>>>>> cd ${config.source_dir}build\n`;
     const child = child_process.exec('cmake -G "MinGW Makefiles" ..');
     child.stdout.on('data', data => {
         if (verbose) process.stdout.write(data);
@@ -165,6 +169,7 @@ exports.compile_and_make = async () => {
 };
 
 exports.do_build = async () => {
+    process.chdir(config.source_dir);
     this.building = true;
     this.need_build = false;
     this.build_log = '';
@@ -182,6 +187,6 @@ exports.do_build = async () => {
     child.on('exit', code => {
         if (code) abort_build('There was an svn error\n');
         building_rev = svn_output.split('\n')[svn_output.split('\n').length - 2].split(' ')[2].split('.')[0];
-        this.compile_and_make();
+        this.do_cmake();
     });
 };
