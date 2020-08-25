@@ -51,6 +51,6 @@ setInterval(() => {
 
 const httpServer = http.createServer(app);
 
-httpServer.listen(8080, () => {
-	console.log('HTTP Server running on port 8080');
+httpServer.listen(config.port, () => {
+	console.log(`HTTP Server running on port ${config.port}`);
 }); 

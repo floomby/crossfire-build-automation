@@ -186,7 +186,7 @@ exports.do_build = async () => {
     });
     child.on('exit', code => {
         if (code) abort_build('There was an svn error\n');
-        building_rev = svn_output.split('\n')[svn_output.split('\n').length - 2].split(' ')[2].split('.')[0];
+        building_rev = /(\d{5,})/g.exec(svn_output)[0];
         this.do_cmake();
     });
 };
