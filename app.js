@@ -54,12 +54,12 @@ if (config.use_https) {
     let private_key, certificate, ca, credentials;
 
     private_key = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\privkey.pem', 'utf8');
-    certificate = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\cert.pem', 'utf8');
-    ca = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\chain.pem', 'utf8');
+    certificate = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\fullchain.pem', 'utf8');
+    //ca = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\chain.pem', 'utf8');
     credentials = {
         key: private_key,
         cert: certificate,
-        ca: ca,
+        //ca: ca,
     };
 
 	app.use ((req, res, next) => {
@@ -79,5 +79,3 @@ const http_server = require('http').createServer(app);
 http_server.listen(config.http_port, () => {
     console.log(`HTTP Server running on port ${config.http_port}`);
 });
-
-
