@@ -42,6 +42,8 @@ app.get('/somehook', (req, res) => {
     res.send('will do a build');
 });
 
+
+
 setInterval(() => { 
     if (build.need_build && !build.building) {
         build.do_build();
@@ -60,25 +62,22 @@ if (config.use_https) {
         ca: ca,
     };
 
-    const http = express.createServer();
-
-    http.get('*', function(req, res) {  
-        res.redirect('https://' + req.headers.host + req.url);
-    });
-
-    http.listen(config.http_port);
-    console.log(`HTTP Server running on port ${config.http_port}`);
+	app.use ((req, res, next) => {
+        if (req.secure) next();
+        else res.redirect(`https://${req.headers.host}${req.url}`);
+	});
 
     const https_server = require('https').createServer(app);
     
     https_server.listen(config.https_port, () => {
         console.log(`HTTPS Server running on port ${config.https_port}`);
     });
-} else {
-    const http_server = require('http').createServer(app);
-    
-    http_server.listen(config.http_port, () => {
-        console.log(`HTTP Server running on port ${config.http_port}`);
-    });
 }
+
+const http_server = require('http').createServer(app);
+    
+http_server.listen(config.http_port, () => {
+    console.log(`HTTP Server running on port ${config.http_port}`);
+});
+
 
