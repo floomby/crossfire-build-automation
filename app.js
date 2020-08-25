@@ -4,13 +4,13 @@ const app = express();
 
 const config = require('./config');
 const build = require('./build');
+
 const app_dir = process.cwd();
 if (!fs.existsSync('releases')) fs.mkdirSync('releases');
 if (!fs.existsSync('logs')) fs.mkdirSync('logs');
 build.release_dir = app_dir + '/releases';
 build.log_dir = app_dir + '/logs';
 process.chdir(config.source_dir);
-
 
 build.revisions = [];
 
@@ -33,7 +33,13 @@ app.get('/release', (req, res) => {
 });
 
 app.get('/log', (req, res) => {
-    if (fs.existsSync(build.log_dir + `/log-${req.query.rev}`)) res.download(build.log_dir + `/log-${req.query.rev}`);
+    if (fs.existsSync(build.log_dir + `/log-${req.query.rev}`)) fs.readFile(build.log_dir + `/log-${req.query.rev}`, 'utf8', (err, data) => {
+        if (err) {
+            res.send('This log is not availible');
+            return;
+        }
+        res.send(data.replace(/\r?\n/g, '<br/>'));
+    });
     else res.send('This log is not availible');
 });
 
@@ -41,7 +47,6 @@ app.get('/somehook', (req, res) => {
     build.need_build = true;
     res.send('will do a build');
 });
-
 
 setInterval(() => { 
     if (build.need_build && !build.building) {
@@ -69,8 +74,8 @@ if (config.use_https) {
     
     const redir_app = express();
     
-    redir_app.get("*", (req, res) => {
-        res.redirect("https://" + req.headers.host + "/" + req.path);
+    redir_app.get('*', (req, res) => {
+        res.redirect(`https://${req.headers.host}${req.path}`);
     });
 
     const http_server = require('http').createServer(redir_app);
