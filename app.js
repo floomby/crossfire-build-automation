@@ -1,5 +1,4 @@
 const fs = require('fs');
-const http = require('http');
 const express = require('express');
 const app = express();
 
@@ -47,10 +46,39 @@ setInterval(() => {
     if (build.need_build && !build.building) {
         build.do_build();
     };
- }, 5000);
+}, 5000);
 
-const httpServer = http.createServer(app);
+if (config.use_https) {
+    let private_key, certificate, ca, credentials;
 
-httpServer.listen(config.port, () => {
-	console.log(`HTTP Server running on port ${config.port}`);
-}); 
+    private_key = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\privkey.pem', 'utf8');
+    certificate = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\cert.pem', 'utf8');
+    ca = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\chain.pem', 'utf8');
+    credentials = {
+        key: private_key,
+        cert: certificate,
+        ca: ca,
+    };
+
+    const http = express.createServer();
+
+    http.get('*', function(req, res) {  
+        res.redirect('https://' + req.headers.host + req.url);
+    });
+
+    http.listen(config.http_port);
+    console.log(`HTTP Server running on port ${config.http_port}`);
+
+    const https_server = require('https').createServer(app);
+    
+    https_server.listen(config.https_port, () => {
+        console.log(`HTTPS Server running on port ${config.https_port}`);
+    });
+} else {
+    const http_server = require('http').createServer(app);
+    
+    http_server.listen(config.http_port, () => {
+        console.log(`HTTP Server running on port ${config.http_port}`);
+    });
+}
+
