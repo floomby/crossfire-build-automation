@@ -55,14 +55,19 @@ if (config.use_https) {
 
     private_key = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\privkey.pem', 'utf8');
     certificate = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\fullchain.pem', 'utf8');
-    //ca = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\chain.pem', 'utf8');
+    ca = fs.readFileSync('C:\\Certbot\\live\\crossfire.floomby.us\\chain.pem', 'utf8');
     credentials = {
         key: private_key,
         cert: certificate,
-        //ca: ca,
+        ca: ca,
+        ciphers: [
+            "ECDHE-RSA-AES128-SHA256",
+            "DHE-RSA-AES128-SHA256",
+            "AES128-GCM-SHA256",
+        ].join(':'),
     };
 
-	app.use ((req, res, next) => {
+	app.use((req, res, next) => {
         if (req.secure) next();
         else res.redirect(`https://${req.headers.host}${req.url}`);
 	});
