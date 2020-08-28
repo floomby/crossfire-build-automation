@@ -118,7 +118,6 @@ exports.make_release = () => {
         fs.writeFile(this.log_dir + '/log-' + building_rev, this.build_log, err => {
             if (err) return console.log('unable to write log');
         });
-        this.revisions.push(building_rev);
         this.building = false;
         console.log('build completed');
     });

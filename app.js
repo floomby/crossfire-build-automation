@@ -12,19 +12,21 @@ build.release_dir = app_dir + '/releases';
 build.log_dir = app_dir + '/logs';
 process.chdir(config.source_dir);
 
-build.revisions = [];
+let revisions = [];
 
-fs.readdir(build.log_dir, (err, files) => {
+let update_server_files = () => fs.readdir(build.log_dir, (err, files) => {
     if (err) return console.log('error reading log file names');
-    build.revisions = files.map(x => x.split('-')[1]);
+    revisions = files.map(x => x.split('-')[1]);
 });
+
+update_server_files();
 
 app.use(require('morgan')('dev'));
 
 app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
-    res.render('home.ejs', { revisions: build.revisions });
+    res.render('home.ejs', { revisions });
 });
 
 app.get('/release', (req, res) => {
@@ -48,11 +50,14 @@ app.get('/somehook', (req, res) => {
     res.send('will do a build');
 });
 
-setInterval(() => { 
+setInterval(() => {
+    update_server_files();
     if (build.need_build && !build.building) {
         build.do_build();
     };
 }, 5000);
+
+
 
 if (config.use_https) {
     let private_key, certificate, ca, credentials;
