@@ -45,18 +45,20 @@ app.get('/log', (req, res) => {
     else res.send('This log is not availible');
 });
 
-app.get('/somehook', (req, res) => {
-    build.need_build = true;
-    res.send('will do a build');
-});
+// Since I haven't figured the hooks out on sourceforge I 
+// am just manually regularly checking if we are out of date.
+// app.get('/somehook', (req, res) => {
+//     build.need_build = true;
+//     res.send('will do a build');
+// });
 
 setInterval(() => {
     update_server_files();
     if (build.need_build && !build.building) {
         build.do_build();
     };
-}, 5000);
-
+    build.check_if_out_of_date();
+}, config.check_interval);
 
 
 if (config.use_https) {

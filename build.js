@@ -12,6 +12,7 @@ exports.log_dir = '';
 exports.revisions = [];
 
 const verbose = true;
+const svn_verbose = false;
 
 const release_files = [
     ['bin/crossfire-client-gtk2.exe', 'release/crossfire-client-gtk2.exe'],
@@ -168,10 +169,10 @@ exports.do_cmake = async () => {
 };
 
 exports.do_build = async () => {
-    process.chdir(config.source_dir);
     this.building = true;
     this.need_build = false;
     this.build_log = '';
+    process.chdir(config.source_dir);
     console.log('doing build');
     let svn_output = '';
     const child = child_process.exec('svn up ..');
@@ -186,6 +187,32 @@ exports.do_build = async () => {
     child.on('exit', code => {
         if (code) abort_build('There was an svn error\n');
         building_rev = /(\d{5,})/g.exec(svn_output)[0];
-        this.do_cmake();
+        ncp(config.sound_dir,`./sounds`,  err => {
+            if (err) {
+                this.build_log += `Error copying sounds\n`;
+                if (verbose) console.log(`Error copying sounds\n`, err);
+                if (err) return abort_build(err);    
+            }
+            this.do_cmake();
+        });
     });
+};
+
+exports.check_if_out_of_date = () => {
+    if (this.building) return;
+    let svn_output = '';
+    const child = child_process.exec(`svn status -u ${config.source_dir}`);
+    child.stdout.on('data', data => {
+        if (svn_verbose) process.stdout.write(data);
+        svn_output += data;
+    });
+    child.stderr.on('data', data => {
+        if (svn_verbose) process.stdout.write(data);
+        svn_output += data;
+    });
+    child.on('exit', code => {
+        if (code) console.log('error checking svn status\n');
+        let lines = svn_output.split('\n');
+        this.need_build = !this.building && lines.filter(x => x.match(/\*/)).length;
+    });    
 };
