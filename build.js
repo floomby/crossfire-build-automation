@@ -64,6 +64,7 @@ const release_files = [
     ['C:\\msys32\\mingw32\\bin\\zlib1.dll', 'release/zlib1.dll'],
     ['C:\\msys32\\mingw32\\lib\\gdk-pixbuf-2.0', 'release/lib/gdk-pixbuf-2.0'],
     ['C:\\msys32\\mingw32\\lib\\gtk-2.0', 'release/lib/gtk-2.0'],
+    [config.sound_dir, 'release/sounds'],
 ];
 
 let abort_build = err => {
