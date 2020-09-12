@@ -112,11 +112,18 @@ exports.make_release = () => {
     fs.mkdirSync('release');
     async.each(release_files, async_cp, err => {
         if (err) return abort_build(err);
-        const ostream = fs.createWriteStream(`${this.release_dir}\\client-${building_rev}.zip`);
-        archive.pipe(ostream);
-        archive.directory(config.source_dir + '/build/release', false);
-        archive.finalize();
-        console.log(this.release_dir);
+        try {
+            const ostream = fs.createWriteStream(`${this.release_dir}\\client-${building_rev}.zip`);
+            archive.pipe(ostream);
+            archive.directory(config.source_dir + '/build/release', false);
+            archive.finalize();
+            console.log(this.release_dir);
+        } catch(err) {
+            console.log('we had an error creating archive', err);
+            // TODO Fixme, why do we have this
+            this.need_build = true;
+            abort_build(err);
+        }
         fs.writeFile(this.log_dir + '/log-' + building_rev, this.build_log, err => {
             if (err) return console.log('unable to write log');
         });
