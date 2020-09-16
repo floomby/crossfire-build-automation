@@ -1,6 +1,7 @@
 const fs = require('fs');
 const express = require('express');
 const app = express();
+const parseString = require('xml2js').parseString;
 
 const config = require('./config');
 const build = require('./build');
@@ -12,11 +13,23 @@ build.release_dir = app_dir + '/releases';
 build.log_dir = app_dir + '/logs';
 process.chdir(config.source_dir);
 
-let revisions = [];
+let revision_logs, revisions = [];
 
 let update_server_files = () => fs.readdir(build.log_dir, (err, files) => {
     if (err) return console.log('error reading log file names');
     revisions = files.map(x => x.split('-')[1]);
+    let revision_numbers = revisions.map(x => parseInt(x));
+    let oldest = Math.min(...revision_numbers);
+    let newest = Math.max(...revision_numbers);
+    
+    console.log(revision_numbers);
+    build.get_revision_log(oldest, newest, (err, xml) => {
+        if (err) return console.log(err);
+        parseString(xml, (err, data) => {
+            if (err) return console.log('error parsing xml data', err);
+            revision_logs = data['log']['logentry'];
+        });
+    });
 });
 
 update_server_files();
@@ -26,7 +39,7 @@ app.use(require('morgan')('dev'));
 app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
-    res.render('home.ejs', { revisions });
+    res.render('home.ejs', { revisions, revision_logs });
 });
 
 app.get('/release', (req, res) => {
@@ -47,17 +60,17 @@ app.get('/log', (req, res) => {
 
 // Since I haven't figured the hooks out on sourceforge I 
 // am just manually regularly checking if we are out of date.
-// app.get('/somehook', (req, res) => {
-//     build.need_build = true;
-//     res.send('will do a build');
-// });
+app.get('/somehook', (req, res) => {
+    build.need_build = true;
+    res.send('will do a build');
+});
 
 setInterval(() => {
     update_server_files();
     if (build.need_build && !build.building) {
         build.do_build();
     };
-    build.check_if_out_of_date();
+    // build.check_if_out_of_date();
 }, config.check_interval);
 
 

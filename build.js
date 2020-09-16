@@ -222,5 +222,23 @@ exports.check_if_out_of_date = () => {
         if (code) console.log('error checking svn status\n');
         let lines = svn_output.split('\n');
         this.need_build = !this.building && lines.filter(x => x.match(/\*/)).length;
-    });    
+    });
+};
+
+exports.get_revision_log = (start, stop, cb) => {
+    let svn_output = '';
+    console.log(`svn log -r ${start}:${stop} ${config.source_dir} --xml`);
+    const child = child_process.exec(`svn log -r ${start}:${stop} ${config.source_dir} --xml`);
+    child.stdout.on('data', data => {
+        if (svn_verbose) process.stdout.write(data);
+        svn_output += data;
+    });
+    child.stderr.on('data', data => {
+        if (svn_verbose) process.stdout.write(data);
+        svn_output += data;
+    });
+    child.on('exit', code => {
+        if (code) return cb('error checking svn status\n');
+        cb(false, svn_output);
+    });
 };
