@@ -70,7 +70,7 @@ setInterval(() => {
     if (build.need_build && !build.building) {
         build.do_build();
     };
-    // build.check_if_out_of_date();
+    build.check_if_out_of_date();
 }, config.check_interval);
 
 

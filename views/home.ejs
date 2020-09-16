@@ -18,7 +18,7 @@
         msg: x['msg'][0],
       }));
 
-      let revisions = <%-JSON.stringify(revisions)%>;
+      let revisions = <%-JSON.stringify(revisions)%>.sort().reverse();
 
       let logentry_html = entry =>
         `<p>
@@ -28,22 +28,31 @@
           Message: ${entry.msg} <br/>
         </p>`;
       
-      function build_mouseover(e) {
-        console.log(e);
+      let changelog;
+      
+      let go = () => {
+        changelog = document.getElementById('changelog');
+      };
+
+      function build_mouseover(revision) {
+        changelog.innerHTML = entries.filter(x => x.revision > revisions[revisions.findIndex(x => x < revision)] && x.revision <= revision).map(logentry_html).join(''); 
       }
     </script>
   </head>
-  <body>
+  <body onload="go()">
     <div class="m-2">
       <% for (let i = 0; i < revisions.length; i++) { %>
-        <a href="/release?rev=<%-revisions[i]%>" onmouseover="build_mouseover(event)"><%-revisions[i]%> release</a>
-        <a href="/log?rev=<%-revisions[i]%>" onmouseover="build_mouseover(event)"><%-revisions[i]%> build log</a>
+        <a href="/release?rev=<%-revisions[i]%>" onmouseover="build_mouseover(<%-revisions[i]%>)"><%-revisions[i]%> release</a>
+        <a href="/log?rev=<%-revisions[i]%>" onmouseover="build_mouseover(<%-revisions[i]%>)"><%-revisions[i]%> build log</a>
         <br/>
       <% } %>
     </div>
     <br/>
-    <div class="m-2" id="patch-notes">
-      
+    <div class="m-2">
+      <h5>Changelog (when compared to last build)</h5></span>
+      <div id="changelog">
+
+      </div>
     </div>
   </body>
 </html>
