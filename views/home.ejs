@@ -9,8 +9,6 @@
       body { padding-top:20px; }
     </style>
     <script>
-      $(() => { $('[data-toggle="tooltip"]').tooltip()});
-
       let entries = <%-JSON.stringify(revision_logs)%>.map(x => ({
         revision: x['$']['revision'],
         author: x['author'][0],
@@ -49,9 +47,8 @@
     </div>
     <br/>
     <div class="m-2">
-      <h5>Changelog (when compared to last build)</h5></span>
+      <h5>Changelog (when compared to last build)</h5>
       <div id="changelog">
-
       </div>
     </div>
   </body>

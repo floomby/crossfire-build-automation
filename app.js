@@ -35,6 +35,7 @@ let update_server_files = () => fs.readdir(build.log_dir, (err, files) => {
 update_server_files();
 
 app.use(require('morgan')('dev'));
+app.use(require('serve-favicon')(app_dir + '/favicon.ico'));
 
 app.set('view engine', 'ejs');
 
