@@ -26,14 +26,16 @@
           Message: ${entry.msg} <br/>
         </p>`;
       
-      let changelog;
+      let changelog, changelog_heading;
       
       let go = () => {
         changelog = document.getElementById('changelog');
+        changelog_heading = document.getElementById('changelog-heading');
       };
 
       function build_mouseover(revision) {
-        changelog.innerHTML = entries.filter(x => x.revision > revisions[revisions.findIndex(x => x < revision)] && x.revision <= revision).map(logentry_html).join(''); 
+        changelog.innerHTML = entries.filter(x => x.revision > revisions[revisions.findIndex(x => x < revision)] && x.revision <= revision).map(logentry_html).join('');
+        changelog_heading.innerHTML = changelog.innerHTML.length > 0 ? 'Changelog (when compared to last build)' : '';
       }
     </script>
   </head>
@@ -47,7 +49,7 @@
     </div>
     <br/>
     <div class="m-2">
-      <h5>Changelog (when compared to last build)</h5>
+      <h5 id="changelog-heading"></h5>
       <div id="changelog">
       </div>
     </div>
