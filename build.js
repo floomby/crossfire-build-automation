@@ -18,6 +18,7 @@ const release_files = [
     ['bin/crossfire-client-gtk2.exe', 'release/crossfire-client-gtk2.exe'],
     ['bin/cfsndserv.exe', 'release/bin/cfsndserv.exe'],
     ['share', 'release/share'],
+    ['C:\\msys32\\mingw32\\bin\\gspawn-win32-helper-console.exe', 'release/gspawn-win32-helper-console.exe'],
     ['C:\\msys32\\mingw32\\share\\themes', 'release/share/themes'],
     ['C:\\msys32\\mingw32\\bin\\libatk-1.0-0.dll', 'release/libatk-1.0-0.dll'],
     ['C:\\msys32\\mingw32\\bin\\libbrotlicommon.dll', 'release/libbrotlicommon.dll'],
@@ -70,6 +71,7 @@ const release_files = [
     ['C:\\msys32\\mingw32\\bin\\SDL.dll', 'release/SDL.dll'],
     ['C:\\msys32\\mingw32\\bin\\zlib1.dll', 'release/zlib1.dll'],
     ['C:\\msys32\\mingw32\\lib\\gdk-pixbuf-2.0', 'release/lib/gdk-pixbuf-2.0'],
+    ['C:\\msys32\\mingw32\\lib\\gtk-2.0', 'release/lib/gtk-2.0'],
     ['C:\\msys32\\mingw32\\lib\\gtk-2.0', 'release/lib/gtk-2.0'],
 ];
 
